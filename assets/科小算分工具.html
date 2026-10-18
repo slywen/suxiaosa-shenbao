@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>科小算分工具 · 科技型中小企业评分自测（离线版 v1.0）</title>
+<style>
+  :root { --ok:#0a7d34; --bad:#b4231f; --warn:#b45309; }
+  body { font-family: "Microsoft YaHei", system-ui, sans-serif; max-width: 860px; margin: 24px auto; padding: 0 16px; color:#1c1c1c; }
+  h1 { font-size: 20px; } .sub { color:#666; font-size:13px; }
+  .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px 16px; }
+  label { display:block; font-size:13px; color:#333; margin-top:6px; }
+  input[type=number] { width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid #bbb; border-radius:4px; font-size:14px; }
+  button { padding:8px 20px; margin-top:14px; font-size:14px; border-radius:5px; border:1px solid #2b6cb0; background:#2b6cb0; color:#fff; cursor:pointer; }
+  button.ghost { background:#fff; color:#2b6cb0; }
+  table { border-collapse:collapse; width:100%; font-size:13px; margin-top:8px; }
+  td,th { border:1px solid #ccc; padding:5px 8px; text-align:left; }
+  th { background:#f2f4f7; }
+  .pass { color:var(--ok); font-weight:bold; } .fail { color:var(--bad); font-weight:bold; }
+  .note { font-size:12px; color:#666; }
+  .card { border:1px solid #ddd; border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .flagline { background:#fdecec; border-left:4px solid var(--bad); padding:6px 10px; margin:8px 0; font-size:13px; }
+  .warmline { background:#fff7e6; border-left:4px solid var(--warn); padding:6px 10px; margin:8px 0; font-size:13px; }
+  @media print { button { display:none; } }
+</style>
+</head>
+<body>
+<h1>科小算分工具（v1.0 · 离线）</h1>
+<div class="sub">科技型中小企业(file) 企业科技活动评分自测 —— 单文件网页，数据只存本机内存，不联网不上传。<br>
+口径依据：《科技型中小企业评价办法》（国科发政〔2017〕115号）、2023年加计扣除公告（财政部 税务总局公告2023年第7号）。分档数字逐年可能调整，以当年官方文件为准。</div>
+
+<div class="grid">
+  <div>
+    <label>职工总数（全年季平均，人）</label><input id="staff" type="number" min="0">
+    <label>科技人员数（全年季平均，人）</label><input id="tech" type="number" min="0">
+    <label>上一年度研发费用总额（系统自动汇总值，万元）</label><input id="rd" type="number" min="0" step="0.01">
+    <label>上一年度销售收入总额（万元）</label><input id="sales" type="number" min="0" step="0.01">
+  </div>
+  <div>
+    <label>上一年度成本费用总额（万元）</label><input id="cost" type="number" min="0" step="0.01">
+    <label>Ⅰ类知识产权件数（有效、与主要产品相关）</label><input id="ip1" type="number" min="0">
+    <label>Ⅱ类知识产权件数（有效、与主要产品相关）</label><input id="ip2" type="number" min="0">
+    <label>资产总额（万元，期末数）—— 用于规模门槛</label><input id="asset" type="number" min="0" step="0.01">
+  </div>
+</div>
+<div class="note" style="margin-top:8px">
+  规模硬门槛另需确认：年销售收入 ≤2亿元、资产总额 ≤2亿元（本页以万元输入自动判断规模）。职工总数注意 ≤500人。
+</div>
+<button onclick="score('score')">计算得分</button> <button class="ghost" onclick="score('gap')">反算下一档缺额</button> <button class="ghost" onclick="clearAll()">清空</button>
+
+<div id="out"></div>
+
+<div class="card note"><strong>使用提醒</strong>：本工具只做"分档几何计算"，不替代官方系统自评结果；科技人员/职工务必用全年季平均，"辅助账是否设置"等生死线项不在本页计算（见 SKILL.md §4.4 五条生死线）。</div>
+
+<script>
+function g(id){ const v=document.getElementById(id).value; return v===''||v===null?NaN:Number(v); }
+function bands(t){ // [下限, 得分]
+  return t==='tech' ? [[30,20],[25,16],[20,12],[15,8],[10,4]]
+       : t==='a'   ? [[6,50],[5,40],[4,30],[3,20],[2,10]]
+       :             [[30,50],[25,40],[20,30],[15,20],[10,10]];
+}
+function pick(list, ratio){ // 累进档：ratio >= 下限取该档
+  for(const [lo,sc] of list) if(ratio>=lo) return {lo,sc};
+  return null;
+}
+function fmt(n){ return isFinite(n)? n.toLocaleString('zh-CN',{maximumFractionDigits:2}) : '—'; }
+
+function score(mode){
+  const staff=g('staff'), tech=g('tech'), rd=g('rd'), sales=g('sales'), cost=g('cost'), ip1=g('ip1'), ip2=g('ip2'), asset=g('asset');
+  if([staff,tech,rd].some(isNaN) || (sales&&isNaN(sales)) || ( isNaN(cost)) ){ alert('请至少填：职工总数、科技人员数、研发费用、成本费用；销售收入/资产需判断时再填'); return; }
+  if(staff<=0){ alert('职工总数必须大于 0（并可超 500 的一票否：≤500 人）'); return; }
+
+  let html='';
+
+  // ① 规模与准入提示
+  html+='<div class="card"><h3 style="margin:4px 0">① 规模硬门槛</h3>';
+  let gates=[];
+  gates.push(staff>500 ? '❌ 职工 '+staff+' 人 >500（不符合）' : '✅ 职工 '+staff+' 人 ≤500');
+  if(!isNaN(sales) && sales>0){ gates.push(sales>20000 ? '❌ 销售收入 '+fmt(sales)+' 万元 >2亿（不符合）' : '✅ 销售收入 '+fmt(sales)+' 万元 ≤2亿'); }
+  if(!isNaN(asset) && asset>0){ gates.push(asset>20000 ? '❌ 资产总额 '+fmt(asset)+' 万元 >2亿（不符合）' : '✅ 资产总额 '+fmt(asset)+' 万元 ≤2亿'); }
+  html+=gates.join('<br>')+'</div>';
+
+  // ② 指标9 科技人员
+  const tr = tech/staff*100;
+  const t9 = tr>=30?20 : tr>=25?16 : tr>=20?12 : tr>=15?8 : tr>=10?4 : 0;
+  const trTxt = tr>=10 ? '✅ 科技人员占比 '+tr.toFixed(2)+'% → '+t9+' 分' : '';
+  if(tr<10) html+='<div class="flagline">🔴 生死线②：科技人员占比 '+tr.toFixed(2)+'% &lt;10% → 指标9 = 0 分，<b>一票否决</b>，总分再高也不入库。补人见④。</div>';
+  else html+='<div class="card"><h3 style="margin:4px 0">② 指标9 · 科技人员</h3>'+trTxt+'</div>';
+
+  // ③ 指标10 研发投入（双口径，取高）
+  html+='<div class="card"><h3 style="margin:4px 0">③ 指标10 · 研发投入（双口径取高）</h3><table><tr><th>口径</th><th>比值</th><th>档位</th><th>得分</th></tr>';
+  let s10A=null, s10B=null;
+  if(!isNaN(cost) && cost>0){
+    const rb=rd/cost*100, b10=pick(bands('b'), rb); s10B = b10? b10.sc : 0;
+    html+='<tr><td>B 研发费用÷成本费用</td><td>'+rb.toFixed(2)+'%</td><td>'+(b10?('≥'+b10.lo+'%'):'&lt;10%')+'</td><td>'+s10B+'</td></tr>';
+  }
+  if(!isNaN(sales) && sales>0){
+    const ra=rd/sales*100, a10=pick(bands('a'), ra); s10A = a10? a10.sc : 0;
+    html+='<tr><td>A 研发费用÷销售收入</td><td>'+ra.toFixed(2)+'%</td><td>'+(a10?('≥'+a10.lo+'%'):'&lt;2%')+'</td><td>'+s10A+'</td></tr>';
+  } else {
+    html+='<tr><td colspan="4" class="note">未填销售收入 → 口径 A 未计算（可只算口径 B）</td></tr>';
+  }
+  const s10=Math.max(s10A??-1, s10B??-1);
+  html+='</table>取高分：<b>'+s10+' 分</b>'+(s10===50?'（已满分，再补研发费用不涨分）':'')+'</div>';
+
+  // ④ 指标11 科技成果
+  let s11=0, note11='';
+  if(ip1>=1){ s11=30; note11='Ⅰ类 ≥1 项 → 30 分（封顶）'; }
+  else { s11 = ip2>=4?24 : ip2===3?18 : ip2===2?12 : ip2===1?6 : 0;
+         note11=s11===0?'无有效相关知产 → 0 分（触发实地核查风险）':('Ⅱ类 '+ip2+' 项 → '+s11+' 分'); }
+  html+='<div class="card"><h3 style="margin:4px 0">④ 指标11 · 科技成果</h3>'+note11+'</div>';
+
+  // ⑤ 总分
+  const total=t9+s10+s11, pass= total>=60 && t9>0;
+  html+='<div class="card" style="border-color:#2b6cb0"><h3 style="margin:4px 0">⑤ 总分 <span class="'+(pass?'pass':'fail')+'">'+total+'/100 '+(pass?'—— 🟢≥60 且指标9≠0：可入库（自评通过条件之一）':'—— 🔴'+(t9===0&&total>=60?'仅因指标9=0被否':'总分不足 60')+'</span></h3>';
+  if(!pass) html+='差 '+ (t9===0&&total>=60 ? '不是分，是<b>科技人员占比 ≥10%</b> 这条生死线' : (60-total)+' 分')+'。';
+  html+='</div>';
+
+  // ⑥ 提分杠杆
+  if(mode==='gap'){
+    html+='<div class="card"><h3 style="margin:4px 0">⑥ 下一档缺额（合法路径，须真实）</h3><ul style="font-size:13px">';
+    // 科技人员下一档
+    const tiersTech=[30,25,20,15,10], nextTech=tiersTech.reverse().find(x=>x>tr);
+    if(nextTech){ const need=Math.ceil(nextTech*staff/100)-tech;
+      html+='<li><b>科技人员</b>：想到占比 ≥'+nextTech+'%（指标9→'+(nextTech>=30?20:nextTech>=25?16:nextTech>=20?12:nextTech>=15?8:4)+'分），还需 <b>'+need+'</b> 名科技人员（⚠️须真实参与研发并留工时凭证）。</li>'; }
+    // 研发投入下一档（双口径都要反算，取代价小）
+    const ra=isNaN(sales)?NaN:rd/sales*100;
+    const nxtA=isNaN(ra)?NaN:[2,3,4,5,6].find(x=>x>ra);
+    const rb=cost>0?rd/cost*100:NaN;
+    const nxtB=isNaN(rb)?NaN:[10,15,20,25,30].find(x=>x>rb);
+    let opts=[];
+    if(s10A!==null){ if(nxtA){ const needA=nxtA/100*sales; opts.push('口径A：研发费用再补 <b>'+fmt(needA-rd)+'</b> 万元 → ≥'+nxtA+'% 占销售收入 → '+ (nxtA>=6?50:nxtA>=5?40:nxtA>=4?30:nxtA>=3?20:10) +' 分'); } else { opts.push('口径A：已封顶（≥6%）'); } }
+    if(isFinite(nxtB) || cost>0){ if(nxtB){ const needB=nxtB/100*cost; opts.push('口径B：研发费用再补 <b>'+fmt(needB-rd)+'</b> 万元 → ≥'+nxtB+'% 占成本费用 → '+ (nxtB>=30?50:nxtB>=25?40:nxtB>=20?30:nxtB>=15?20:10) +' 分'); } else { if(s10B!==null) opts.push('口径B：已封顶（≥30%）'); } }
+    html+='<li><b>研发投入（补一条最省的呢）</b>：<ul>'+opts.map(o=>'<li>'+o+'</li>').join('')+'</ul>⚠️ 两个口径共用同一分子，补完要<b>代回去重新算两个口径取高</b>。</li>';
+    if(s11<30){ if(ip1<1) html+='<li><b>科技成果</b>：当前 '+s11+' 分。1 项Ⅰ类（发明专利等）→ 直接 30 分封顶；Ⅱ类每 +1 项 +6 分、到 4 项 = 24 分。⚠️ 须与<b>主要产品相关</b>、有效期内。</li>'; }
+    html+='</ul><div class="note">提分动作必须建立在<b>真实情况</b>之上：规范归集<b>已发生</b>的研发、真实申请知产、规范用工——不是包装。</div></div>';
+  }
+
+  html+='<div class="warmline">上述分档数字以《科技型中小企业评价办法》为准，<b>逐年可能调整</b>；最终以官方系统内自评结果为准。本工具仅供企业自测参考。</div>';
+  document.getElementById('out').innerHTML=html;
+}
+function clearAll(){ document.getElementById('out').innerHTML=''; ['staff','tech','rd','sales','cost','ip1','ip2','asset'].forEach(i=>document.getElementById(i).value=''); }
+</script>
+</body>
+</html>
