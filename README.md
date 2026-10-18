@@ -1,11 +1,6 @@
 # 科技型中小企业申报助手（suxiaosa-shenbao v6）
 
-<!-- 安全评级徽章：本技能被 Skills Directory 收录后启用。
-收录入口：https://app.skillsdirectory.com/submit （用 GitHub 登录提交本仓库）
-拿到收录页 slug 后（形如 slywen-suxiaosa-shenbao-xxxxxxxx），把下面两处注释解开并把 YOUR-SLUG 替换为该 slug：
-
-[![Security: A — Skills Directory](https://www.skillsdirectory.com/api/skills/YOUR-SLUG/badge)](https://www.skillsdirectory.com/skills/YOUR-SLUG)
--->
+[![Security: A — Skills Directory](https://www.skillsdirectory.com/api/skills/slywen-suxiaosa-shenbao/badge)](https://www.skillsdirectory.com/skills/slywen-suxiaosa-shenbao)
 
 [![Agent Skill: suxiaosa-shenbao](https://img.shields.io/badge/Agent_Skill-SKILL.md-2b6cb0)](https://github.com/slywen/suxiaosa-shenbao)
 [![结构: 主控+references](https://img.shields.io/badge/%E7%BB%93%E6%9E%84-%E4%B8%BB%E6%8E%A7+references-8a4bbb)](SKILL.md)
