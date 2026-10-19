@@ -5,7 +5,7 @@ display_name_en: Tech-SME Innovation Evaluation Filing Assistant
 description_zh: 科技型中小企业（科小）自主评价与申报助手，服务对象是企业自己。能算分、能判定、能预警，不是复述填报说明书——算分、判定、提分缺口全部给确定性结果。按经验分两种答法：①企业填过/有经验——直接核数据，给勾稽关系、生死线、提分杠杆；②第一次填——按系统栏序一栏一栏手把手带。附确定性离线算分工具与研发费用辅助账工具，数据可全程本机离线处理，不联网不上传。不构成申报指导，仅供企业自主申报测试。
 description_en: An Agent Skill for China's Tech-SME (Science & Technology-based SME) self-evaluation and filing. Rather than restating the official manual, it computes eligibility scores, flags one-vote-veto red lines (auxiliary R&D ledger, <10% tech-staff ratio, empty R&D project table, etc.), and reverse-calculates the fastest legal gap-closing path. Ships with two fully offline single-file tools (score calculator + R&D expense auxiliary ledger), so sensitive financial and personnel data can be processed entirely locally without any network upload. For enterprises' own filing use only; no agency service, no outcome guarantee.
 description: 科技型中小企业（科小）自主评价与申报助手，服务对象是企业自己。能算分、能判定、能预警，不是复述填报说明书。按经验分两种答法：①企业填过/有经验——直接核数据，给勾稽关系、生死线、提分杠杆，不讲流程；②第一次填——按系统栏序一栏一栏手把手带。覆盖：能不能报、怎么填系统、数据口径、材料打印盖章扫描上传、研发费用辅助账、实地核查、年度更新与撤销。触发词：科技型中小企业、科小、科小申报/科小自评/科小入库/科小填报/科小材料/科小辅助账/科小实地核查/科小年度更新、"我这个情况能不能报科小""我该怎么填系统""帮我看看这样填对不对"。由科技服务项目申报老兵——苏小萨（微信：susuyianming）整理制作，免费开放，不构成申报指导，仅供企业测试。
-version: 6.0.0
+version: 6.0.1
 license: 免费开放（可自由复制、传播、修改）。仅供企业自主申报使用；不得用于收费代办、"包过"或任何形式的有偿申报服务。
 author: 科技服务项目申报老兵——苏小萨（微信：susuyianming）
 ---
@@ -134,7 +134,7 @@ author: 科技服务项目申报老兵——苏小萨（微信：susuyianming）
 ## 5. 材料（读 `references/materials.md`）
 
 涉及"要交什么"，答案永远是三件事，缺一件不合格：**要哪几份 → 怎么盖章 → 怎么扫描上传**。
-总口径：4 份佐证 + 1 份封面，全部 PDF、加盖公章（封面另需法定代表人签字/签章）、单份 ≤1M、300dpi "文档"模式。
+总口径：4 份佐证 + 1 份封面，均加盖公章（封面另需法定代表人签字/签章）、以 PDF 上传（封面也可为图片）、单份 ≤1M、300dpi "文档"模式。
 封面在自评"符合"之后才能下载；评价机构必须选，否则不能提交。
 
 ---
